@@ -12,7 +12,7 @@ import biz.pavonis.main.view.MainPanel;
 
 public class GameOfLifeController {
 
-    private static final long TICK_INTERVAL = 300;
+    private static final long TICK_INTERVAL = 50;
     private TimerTask timerTask = createTimerTask();
 
     private TimerTask createTimerTask() {
@@ -93,6 +93,7 @@ public class GameOfLifeController {
     }
 
     private void recalculateUniverseState() {
+        long nano = System.nanoTime();
         int size = Universe.getSize();
         boolean[][] oldState = universe.getGrid();
         boolean[][] newState = new boolean[size][size];
@@ -115,6 +116,7 @@ public class GameOfLifeController {
             }
         }
         universe.setNewState(newState);
+        System.out.println("Recalculation in: " + (System.nanoTime() - nano) / 1000 / 1000 + "ms.");
     }
 
     private void fireLifeTickListeners() {

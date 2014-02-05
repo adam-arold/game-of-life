@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class Universe {
 
-    private static final int SIZE = 100;
+    private static final int SIZE = 200;
     private boolean[][] grid = new boolean[SIZE][SIZE];
 
     public boolean[][] getGrid() {
