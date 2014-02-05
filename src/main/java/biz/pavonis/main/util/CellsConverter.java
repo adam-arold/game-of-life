@@ -28,7 +28,8 @@ public class CellsConverter {
             GsonBuilder builder = new GsonBuilder();
             for (File file : oldPatternsFolder.listFiles()) {
                 List<List<Boolean>> pattern = fetchPattern(file);
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(file.getName().replace(".cells", ".json"))))) {
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File("src/main/resources/patterns/"
+                        + file.getName().replace(".cells", ".json"))))) {
                     writer.write(builder.create().toJson(pattern));
                 } catch (IOException e) {
                     e.printStackTrace();

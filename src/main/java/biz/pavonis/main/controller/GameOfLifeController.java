@@ -64,11 +64,10 @@ public class GameOfLifeController {
         mainPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (mainPanel.getStartButton().isEnabled() && clickIsOnGrid(e)) {
+                if (clickIsOnGrid(e)) {
                     int gridX = (e.getX() - MainPanel.getRectX()) / MainPanel.getCellSize();
                     int gridY = (e.getY() - MainPanel.getRectY()) / MainPanel.getCellSize();
-                    boolean newState = !universe.getCellState(gridX, gridY);
-                    universe.setCellState(gridX, gridY, newState);
+                    universe.stampPattern(mainPanel.getSelectedPattern(), gridX, gridY);
                     mainPanel.drawUniverse(universe);
                 }
             }
@@ -93,7 +92,6 @@ public class GameOfLifeController {
     }
 
     private void recalculateUniverseState() {
-        long nano = System.nanoTime();
         int size = Universe.getSize();
         boolean[][] oldState = universe.getGrid();
         boolean[][] newState = new boolean[size][size];
@@ -116,7 +114,6 @@ public class GameOfLifeController {
             }
         }
         universe.setNewState(newState);
-        System.out.println("Recalculation in: " + (System.nanoTime() - nano) / 1000 / 1000 + "ms.");
     }
 
     private void fireLifeTickListeners() {

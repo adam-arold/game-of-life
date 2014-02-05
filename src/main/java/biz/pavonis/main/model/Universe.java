@@ -52,4 +52,13 @@ public class Universe {
         }
         return result;
     }
+
+    public void stampPattern(Boolean[][] selectedPattern, int startX, int startY) {
+        int width = selectedPattern[0].length;
+        for (int y = 0; y < selectedPattern.length; y++) {
+            for (int x = 0; x < width; x++) {
+                grid[y + startY][x + startX] = selectedPattern[y][x];
+            }
+        }
+    }
 }
