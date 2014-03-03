@@ -6,6 +6,7 @@
 	<version>1.0.0-SNAPSHOT</version>
 	<name>Game of Life</name>
 	<packaging>jar</packaging>
+	<description>Simple game of life implementation.</description>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -17,6 +18,21 @@
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.2.4</version>
+		</dependency>
+		<dependency>
+			<groupId>biz.pavonis</groupId>
+			<artifactId>biz.pavonis.golservice</artifactId>
+			<version>0.1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.7.2</version>
 		</dependency>
 	</dependencies>
 	<build>
@@ -33,5 +49,4 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-	<description>Simple game of life implementation.</description>
 </project>

@@ -1,13 +1,10 @@
-package biz.pavonis.main.view;
-
-import static biz.pavonis.main.util.Utils.cloneArray;
+package biz.pavonis.main;
 
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -25,37 +22,36 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JToggleButton;
 
-import biz.pavonis.main.model.Universe;
+import biz.pavonis.golservice.api.GameOfLifeService;
+import biz.pavonis.golservice.api.Pattern;
+import biz.pavonis.golservice.api.PatternOrientation;
+import biz.pavonis.golservice.api.Tick;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public class MainPanel extends JPanel {
 
     private static final long serialVersionUID = 5360632279489952664L;
     private static final int GRID_SIZE = 800;
+    private static final int CELL_SIZE = 1;
     private static final int PANEL_WIDTH = 1280;
     private static final int PANEL_HEIGHT = 960;
     private static final int RECT_X = (PANEL_WIDTH - GRID_SIZE) / 2;
     private static final int RECT_Y = (PANEL_HEIGHT - GRID_SIZE) / 2;
-    private static final int CELL_SIZE = Math.round(GRID_SIZE / Universe.getSize());
 
-    private final List<Boolean[][]> patterns = new ArrayList<>();
-    private final JButton resetButton;
+    private final List<boolean[][]> patterns = new ArrayList<>();
     private final JButton stopButton;
     private final JButton startButton;
-    private boolean[][] currentUniverseState = new boolean[Universe.getSize()][Universe.getSize()];
-    private boolean drawGrid = true;
+    private boolean[][] currentUniverseState;
     private JButton clearButton;
     private JLabel lblPreview;
     private String[] patternNames;
-    @SuppressWarnings("rawtypes")
     private JComboBox patternsCombo;
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public MainPanel() {
+    public MainPanel(final GameOfLifeService service) {
         patterns.addAll(loadPatterns());
         setBorder(BorderFactory.createLineBorder(Color.black));
         setLayout(null);
@@ -67,34 +63,7 @@ public class MainPanel extends JPanel {
         stopButton = new JButton("Stop");
         stopButton.setBounds(121, 13, 97, 25);
         add(stopButton);
-
-        startButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                stopButton.setEnabled(true);
-                startButton.setEnabled(false);
-            }
-        });
-        stopButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                startButton.setEnabled(true);
-                stopButton.setEnabled(false);
-            }
-        });
         stopButton.setEnabled(false);
-
-        resetButton = new JButton("Random");
-        resetButton.setBounds(230, 13, 97, 25);
-        add(resetButton);
-
-        clearButton = new JButton("Clear");
-        clearButton.setBounds(339, 13, 97, 25);
-        add(clearButton);
-
-        final JToggleButton gridToggleButton = new JToggleButton("Toggle grid");
-        gridToggleButton.setBounds(448, 13, 137, 25);
-        add(gridToggleButton);
 
         patternsCombo = new JComboBox();
         patternsCombo.setModel(new DefaultComboBoxModel(patternNames));
@@ -108,28 +77,58 @@ public class MainPanel extends JPanel {
         lblPreview = new JLabel("Preview:");
         lblPreview.setBounds(12, 127, 206, 25);
         add(lblPreview);
-        gridToggleButton.addMouseListener(new MouseAdapter() {
+
+        startButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                drawGrid = !drawGrid;
+            	stopButton.setEnabled(true);
+                startButton.setEnabled(false);
+                service.start();
                 repaint(RECT_X, RECT_Y, GRID_SIZE, GRID_SIZE);
+            }
+        });
+        stopButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+            	startButton.setEnabled(true);
+                stopButton.setEnabled(false);
+                service.pause();
+                repaint(RECT_X, RECT_Y, GRID_SIZE, GRID_SIZE);
+            }
+        });
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (clickIsOnGrid(e)) {
+                    int gridX = (e.getX() - RECT_X) / CELL_SIZE;
+                    int gridY = (e.getY() - RECT_Y) / CELL_SIZE;
+                    service.stampPattern(new Pattern(1, "", getSelectedPattern()), gridX, gridY, PatternOrientation.TOP);
+                    repaint(RECT_X, RECT_Y, GRID_SIZE, GRID_SIZE);
+                }
+            }
+
+            private boolean clickIsOnGrid(MouseEvent e) {
+                int gridSize = GRID_SIZE;
+                int rectX = RECT_X;
+                int rectY = RECT_Y;
+                return e.getX() > rectX && e.getX() < rectX + gridSize && e.getY() > rectY && e.getY() < rectY + gridSize;
             }
         });
     }
 
-    private List<Boolean[][]> loadPatterns() {
-        List<Boolean[][]> patterns = new ArrayList<>();
+    private List<boolean[][]> loadPatterns() {
+        List<boolean[][]> patterns = new ArrayList<>();
         List<String> patternNames = new ArrayList<>();
         URL url = Thread.currentThread().getContextClassLoader().getResource("patterns");
         try {
             File patternsFolder = new File(url.toURI());
             GsonBuilder builder = new GsonBuilder();
-            Type collectionType = new TypeToken<Boolean[][]>() {
+            Type collectionType = new TypeToken<boolean[][]>() {
             }.getType();
             for (File file : patternsFolder.listFiles()) {
                 try (Reader reader = new BufferedReader(new FileReader(file))) {
                     patternNames.add(file.getName().replace(".json", ""));
-                    Boolean[][] pattern = builder.create().fromJson(reader, collectionType);
+                    boolean[][] pattern = builder.create().fromJson(reader, collectionType);
                     patterns.add(pattern);
                 } catch (IOException e1) {
                     // TODO Auto-generated catch block
@@ -143,78 +142,34 @@ public class MainPanel extends JPanel {
         return patterns;
     }
 
-    public void addResetListener(MouseListener listener) {
-        resetButton.addMouseListener(listener);
-    }
-
-    public void addStartListener(MouseListener listener) {
-        startButton.addMouseListener(listener);
-    }
-
-    public void addStopListener(MouseListener listener) {
-        stopButton.addMouseListener(listener);
-    }
-
-    public void addClearListener(MouseListener listener) {
-        clearButton.addMouseListener(listener);
-    }
-
-    public JButton getStartButton() {
-        return startButton;
-    }
-
-    public JButton getStopButton() {
-        return stopButton;
-    }
-
-    public JButton getResetButton() {
-        return resetButton;
-    }
-
     public Dimension getPreferredSize() {
         return new Dimension(PANEL_WIDTH, PANEL_HEIGHT);
     }
 
-    public void drawUniverse(Universe universe) {
-        currentUniverseState = cloneArray(universe.getGrid());
+    public void drawUniverse(Tick tick) {
+        currentUniverseState = tick.getUniverseState();
         repaint(RECT_X, RECT_Y, GRID_SIZE, GRID_SIZE);
     }
 
-    public Boolean[][] getSelectedPattern() {
+    private boolean[][] getSelectedPattern() {
         return patterns.get(patternsCombo.getSelectedIndex());
-    }
-
-    public static int getCellSize() {
-        return CELL_SIZE;
-    }
-
-    public static int getRectX() {
-        return RECT_X;
-    }
-
-    public static int getRectY() {
-        return RECT_Y;
-    }
-
-    public static int getGridSize() {
-        return GRID_SIZE;
     }
 
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.setColor(Color.BLACK);
         g.drawRect(RECT_X, RECT_Y, GRID_SIZE, GRID_SIZE);
-        for (int y = 0; y < Universe.getSize(); y++) {
-            for (int x = 0; x < Universe.getSize(); x++) {
-                if (currentUniverseState[y][x]) {
-                    g.fillRect(RECT_X + CELL_SIZE * x, RECT_Y + CELL_SIZE * y, CELL_SIZE, CELL_SIZE);
-                } else if (drawGrid) {
-                    g.drawRect(RECT_X + CELL_SIZE * x, RECT_Y + CELL_SIZE * y, CELL_SIZE, CELL_SIZE);
+        if (currentUniverseState != null) {
+            for (int y = 0; y < GRID_SIZE / CELL_SIZE; y++) {
+                for (int x = 0; x < GRID_SIZE / CELL_SIZE; x++) {
+                    if (currentUniverseState[y][x]) {
+                        g.fillRect(RECT_X + CELL_SIZE * x, RECT_Y + CELL_SIZE * y, CELL_SIZE, CELL_SIZE);
+                    }
                 }
             }
         }
         // preview
-        Boolean[][] pattern = patterns.get(patternsCombo.getSelectedIndex());
+        boolean[][] pattern = patterns.get(patternsCombo.getSelectedIndex());
         int factor = 3;
         int startX = patternsCombo.getX();
         int startY = patternsCombo.getY() + 60;
@@ -228,7 +183,4 @@ public class MainPanel extends JPanel {
         }
     }
 
-    public void setCurrentUniverseState(boolean[][] currentUniverseState) {
-        this.currentUniverseState = currentUniverseState;
-    }
 }
